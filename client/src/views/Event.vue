@@ -23,12 +23,7 @@
     </div>
 
     <button @click="clearAll" class="drop-shadow">
-      <img
-        src="https://image.flaticon.com/icons/png/512/72/72205.png"
-        width="30"
-        alt=""
-        srcset=""
-      />
+      <i class="fas fa-eraser"></i>
     </button>
   </div>
 
@@ -123,7 +118,8 @@ export default {
     border-radius: 10px;
     border: 0;
     background-color: white;
-    color: white;
+    color: rgb(99, 99, 99);
+    font-size: 1.4rem;
     display: flex;
     justify-content: center;
     align-items: center;
