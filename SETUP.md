@@ -61,15 +61,53 @@ default 3000, also add:
 PORT=80
 ```
 
-## 6. Run the app
+> If you set `PORT=80`, complete step 6 ("Running on port 80 without root")
+> *before* starting the app in step 7 — otherwise it will fail with
+> `EACCES: permission denied`.
+
+## 6. Running on port 80 without root (optional)
+
+Skip this step if you're using the default port 3000.
+
+Ports below 1024 (like port 80) normally require root to bind. Instead of
+running the whole app as root (risky — a compromised process would have root
+access to the machine), grant the `node` binary a narrow capability that only
+allows binding to privileged ports:
+
+```bash
+sudo setcap 'cap_net_bind_service=+ep' $(readlink -f $(which node))
+```
+
+Verify it took effect:
+
+```bash
+getcap $(readlink -f $(which node))
+```
+
+> Note: this capability is attached to the `node` binary file itself. If
+> Node.js is reinstalled or upgraded (e.g. via `apt upgrade`), the binary is
+> replaced and you'll need to re-run the `setcap` command.
+
+## 7. Run the app
 
 ```bash
 node backend/server.js
 ```
 
-Visit http://localhost:3000
+Visit http://localhost:3000 (or http://localhost:80 if `PORT=80`)
 
-## 7. Frontend development (optional)
+### Running in the background
+
+To keep the server running after you close the terminal:
+
+```bash
+nohup node backend/server.js > server.log 2>&1 &
+disown
+```
+
+Logs go to `server.log`. To stop it later, see step 9.
+
+## 8. Frontend development (optional)
 
 Only needed if you're changing files in `client/src`.
 
@@ -107,33 +145,6 @@ This outputs into `backend/public/`, which the Express server serves
 directly. Commit the changed files in `backend/public/` (including
 `index.html`, which references the new hashed filenames) along with your
 source changes.
-
-## 8. Running on port 80 without root
-
-Ports below 1024 (like port 80) normally require root to bind. Instead of
-running the whole app as root (risky — a compromised process would have root
-access to the machine), grant the `node` binary a narrow capability that only
-allows binding to privileged ports:
-
-```bash
-sudo setcap 'cap_net_bind_service=+ep' $(readlink -f $(which node))
-```
-
-Verify it took effect:
-
-```bash
-getcap $(readlink -f $(which node))
-```
-
-Now run the app as your normal user (with `PORT=80` set in `.env` as above):
-
-```bash
-node backend/server.js
-```
-
-> Note: this capability is attached to the `node` binary file itself. If
-> Node.js is reinstalled or upgraded (e.g. via `apt upgrade`), the binary is
-> replaced and you'll need to re-run the `setcap` command.
 
 ## 9. Stop the app
 

@@ -3,7 +3,7 @@
     <div class="backdrop">
       <transition name="modal">
         <div class="signin-form" v-if="show">
-          <h1>Sign In</h1>
+          <h1>Your Name</h1>
           <form @submit.prevent="handleSubmit">
             <div class="row">
               <label for="name">Name: </label>
