@@ -2,6 +2,26 @@
 
 Steps to get this app running from a fresh clone on Ubuntu (tested on 24.04).
 
+## Quick start (already set up)
+
+If you've already completed the setup steps below once, starting the app
+again after a reboot or restart just takes:
+
+```bash
+sudo systemctl start mongod   # if not already running
+node backend/server.js
+```
+
+Or in the background:
+
+```bash
+sudo systemctl start mongod
+nohup node backend/server.js > server.log 2>&1 &
+disown
+```
+
+Visit http://localhost:3000 (or http://localhost:80 if `PORT=80`).
+
 ## 1. Clone the repo
 
 ```bash
@@ -157,9 +177,22 @@ pkill -f "node backend/server.js"
 pkill -f "vue-cli-service"
 ```
 
-### Stop MongoDB (optional)
+### Start / stop MongoDB
 
-MongoDB runs as a system service and can keep running in the background. To stop it:
+MongoDB runs as a system service (enabled in step 3, so it normally starts
+automatically on boot). If it's not running, start it with:
+
+```bash
+sudo systemctl start mongod
+```
+
+Check its status with:
+
+```bash
+sudo systemctl status mongod
+```
+
+To stop it:
 
 ```bash
 sudo systemctl stop mongod
