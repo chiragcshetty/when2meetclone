@@ -30,17 +30,17 @@ sudo systemctl enable --now mongod
 ## 4. Install dependencies
 
 ```bash
-# Backend deps (repo root)
 npm install
-
-# Frontend deps
-cd client
-npm install
-cd ..
 ```
 
-> Note: `vue-router` must stay pinned to `4.0.6` (set in `client/package.json`).
-> Newer 4.x versions use syntax that the Vue CLI 4 / webpack 4 build can't parse.
+This installs only the backend dependencies. The pre-built frontend is
+already committed in `backend/public/`, so this is enough to run the app —
+you do **not** need to install or build the client unless you're changing
+frontend code (see "Frontend development" below).
+
+> Note: if you do install client deps, `vue-router` must stay pinned to
+> `4.0.6` (set in `client/package.json`). Newer 4.x versions use syntax that
+> the Vue CLI 4 / webpack 4 build can't parse.
 
 ## 5. Configure environment variables
 
@@ -61,19 +61,7 @@ default 3000, also add:
 PORT=80
 ```
 
-## 6. Build the frontend (production)
-
-```bash
-cd client
-npm run build
-cd ..
-```
-
-This outputs into `backend/public/`, which the Express server serves directly.
-
-## 7. Run the app
-
-### Production (serves the built frontend + API on one port)
+## 6. Run the app
 
 ```bash
 node backend/server.js
@@ -81,7 +69,16 @@ node backend/server.js
 
 Visit http://localhost:3000
 
-### Development (hot-reload frontend + API separately)
+## 7. Frontend development (optional)
+
+Only needed if you're changing files in `client/src`.
+
+```bash
+cd client
+npm install
+```
+
+### Hot-reload dev server
 
 ```bash
 # Terminal 1: backend API
@@ -95,7 +92,23 @@ npm run serve
 Frontend dev server: http://localhost:8080
 Backend API: http://localhost:3000/api/events
 
-### Running on port 80 without root
+### Rebuilding for production
+
+After making changes, rebuild and commit the output so other machines pick up
+the change without needing to build themselves:
+
+```bash
+cd client
+npm run build
+cd ..
+```
+
+This outputs into `backend/public/`, which the Express server serves
+directly. Commit the changed files in `backend/public/` (including
+`index.html`, which references the new hashed filenames) along with your
+source changes.
+
+## 8. Running on port 80 without root
 
 Ports below 1024 (like port 80) normally require root to bind. Instead of
 running the whole app as root (risky — a compromised process would have root
@@ -122,7 +135,7 @@ node backend/server.js
 > Node.js is reinstalled or upgraded (e.g. via `apt upgrade`), the binary is
 > replaced and you'll need to re-run the `setcap` command.
 
-## 8. Stop the app
+## 9. Stop the app
 
 If running in a foreground terminal, press `Ctrl+C` in each terminal running a process (backend and/or frontend dev server).
 
