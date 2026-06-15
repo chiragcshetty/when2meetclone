@@ -69,6 +69,85 @@ const timeLabelGenerator = function (start_time: string, end_time: string) {
   return hours.map(formatAMPM);
 };
 /**
+ * Build the row time labels from the absolute timestamps stored on the event,
+ * formatted in the viewer's local timezone. `firstKey` is the earliest
+ * availability timestamp (in seconds) and `count` is the number of hourly slots
+ * per day. This makes the displayed times shift to the viewer's own timezone.
+ */
+const localTimeLabels = function (firstKey: number, count: number): string[] {
+  const labels = [];
+  for (let i = 0; i < count; i++) {
+    labels.push(formatAMPM(new Date((firstKey + i * 3600) * 1000)));
+  }
+  return labels;
+};
+/**
+ * Returns the offset (in minutes) of an IANA timezone from UTC for a given date.
+ * e.g. "Asia/Singapore" -> 480, "America/New_York" (EDT) -> -240.
+ */
+const getTimezoneOffsetMinutes = function (
+  timeZone: string,
+  date: Date
+): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  });
+  const parts: { [key: string]: number } = {};
+  for (const part of dtf.formatToParts(date)) {
+    if (part.type !== "literal") {
+      parts[part.type] = Number(part.value);
+    }
+  }
+  const asUTC = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour % 24,
+    parts.minute,
+    parts.second
+  );
+  return Math.round((asUTC - date.getTime()) / 60000);
+};
+/**
+ * A small curated list of common IANA timezones for the event creation form,
+ * always including the viewer's detected local timezone.
+ */
+const getTimezoneOptions = function (): string[] {
+  const common = [
+    "Pacific/Honolulu",
+    "America/Anchorage",
+    "America/Los_Angeles",
+    "America/Denver",
+    "America/Chicago",
+    "America/New_York",
+    "America/Sao_Paulo",
+    "Europe/London",
+    "Europe/Paris",
+    "Europe/Berlin",
+    "Europe/Moscow",
+    "Asia/Dubai",
+    "Asia/Kolkata",
+    "Asia/Singapore",
+    "Asia/Shanghai",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+    "Pacific/Auckland",
+    "UTC",
+  ];
+  const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (local && !common.includes(local)) {
+    common.unshift(local);
+  }
+  return common;
+};
+/**
  * Takes in the array of the first day and produces the labels for the time and date.
  * @param {array} title - The first array of the list of days
  */
@@ -112,6 +191,9 @@ const getDay = function (unixObject: number) {
 
 export {
   timeLabelGenerator,
+  localTimeLabels,
+  getTimezoneOffsetMinutes,
+  getTimezoneOptions,
   getLabelTop,
   splitToChunks,
   getDate,

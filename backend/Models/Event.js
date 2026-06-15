@@ -30,6 +30,10 @@ const eventSchema = new Schema(
       type: String,
       required: true,
     },
+    timezone: {
+      type: String,
+      required: false,
+    },
     availability: {
       type: Object,
     },

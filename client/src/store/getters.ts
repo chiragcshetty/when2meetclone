@@ -1,7 +1,12 @@
 import { GetterTree } from "vuex";
 import { EventData, State, User } from "./state";
 import { isEmpty, isNil, chunk } from "lodash";
-import { timeLabelGenerator, getLabelTop, getMonths } from "../utils";
+import {
+  timeLabelGenerator,
+  localTimeLabels,
+  getLabelTop,
+  getMonths,
+} from "../utils";
 
 export type Getters = {
   usernameExist(state: State): boolean;
@@ -16,7 +21,13 @@ export type Getters = {
   getParticipantList(state: State): User[];
   getEventDetails(
     state: State
-  ): { created: string; author: string; participants: number };
+  ): {
+    created: string;
+    author: string;
+    participants: number;
+    timezone: string;
+    viewerTimezone: string;
+  };
 };
 
 export const getters: GetterTree<State, State> & Getters = {
@@ -59,10 +70,18 @@ export const getters: GetterTree<State, State> & Getters = {
     if (isEmpty(state.eventData)) {
       return [];
     }
-    return timeLabelGenerator(
+    // Number of hourly slots per day is timezone-independent (it is a duration).
+    const slotsPerDay = timeLabelGenerator(
       state.eventData.start_time,
       state.eventData.end_time
-    );
+    ).length;
+    // Render the labels from the absolute timestamps so they reflect the
+    // viewer's local timezone rather than the literal entered values.
+    const keys = Object.keys(state.eventData.availability);
+    if (keys.length === 0) {
+      return [];
+    }
+    return localTimeLabels(Number(keys[0]), slotsPerDay);
   },
   getTopLabel(state) {
     if (isEmpty(state.eventData)) {
@@ -77,8 +96,15 @@ export const getters: GetterTree<State, State> & Getters = {
     return state.eventData.users;
   },
   getEventDetails(state) {
+    const viewerTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (isEmpty(state.eventData)) {
-      return { created: "", author: "", participants: 0 };
+      return {
+        created: "",
+        author: "",
+        participants: 0,
+        timezone: "",
+        viewerTimezone,
+      };
     }
     const date = new Date(state.eventData.createdAt);
     const monthNames = getMonths();
@@ -92,6 +118,7 @@ export const getters: GetterTree<State, State> & Getters = {
     } else {
       author = state.eventData.users[0].name;
     }
-    return { created, author, participants };
+    const timezone = state.eventData.timezone || "";
+    return { created, author, participants, timezone, viewerTimezone };
   },
 };

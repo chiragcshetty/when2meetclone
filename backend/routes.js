@@ -28,11 +28,14 @@ router.post("/add", function (req, res) {
   const end_date = req.body.end_date;
   const start_time = req.body.start_time;
   const end_time = req.body.end_time;
+  const timezone = req.body.timezone;
+  const utc_offset = req.body.utc_offset;
   const availability = generateAvailability(
     start_date,
     end_date,
     start_time,
-    end_time
+    end_time,
+    utc_offset
   );
 
   const newUser = new user({
@@ -42,6 +45,7 @@ router.post("/add", function (req, res) {
     users: [],
     start_time,
     end_time,
+    timezone,
     availability,
   });
   //Create users_time_object

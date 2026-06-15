@@ -6,6 +6,7 @@ export interface EventData {
   end_date: string;
   start_time: string;
   end_time: string;
+  timezone: string;
   availability: { [key: string]: string[] };
   createdAt: string;
   updatedAt: string;

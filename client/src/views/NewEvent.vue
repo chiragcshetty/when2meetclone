@@ -32,6 +32,14 @@
           <input type="time" name="etime" id="" v-model="etime" />
         </div>
         <p v-if="error.etime">{{ error.etime }}</p>
+        <div class="row">
+          <label for="timezone">Time Zone</label>
+          <select name="timezone" id="timezone" v-model="timezone">
+            <option v-for="tz in timezones" :key="tz" :value="tz">
+              {{ tz }}
+            </option>
+          </select>
+        </div>
       </form>
       <button @click="submitHandler">Submit</button>
     </div>
@@ -41,6 +49,7 @@
 <script>
 import axios from "axios";
 import { instance } from "../api";
+import { getTimezoneOptions, getTimezoneOffsetMinutes } from "../utils";
 
 export default {
   data() {
@@ -50,6 +59,8 @@ export default {
       edate: "",
       stime: "09:00",
       etime: "17:00",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezones: getTimezoneOptions(),
       error: {
         name: "",
         sdate: "",
@@ -82,12 +93,21 @@ export default {
       // convert datetime
       let eventID;
 
+      // Anchor the entered times to the chosen timezone by computing its UTC
+      // offset (in minutes) on the start date.
+      const utc_offset = getTimezoneOffsetMinutes(
+        this.timezone,
+        new Date(this.sdate)
+      );
+
       const eventDetails = {
         event_name: this.name,
         start_date: this.sdate,
         end_date: this.edate,
         start_time: this.stime,
         end_time: this.etime,
+        timezone: this.timezone,
+        utc_offset,
       };
       const formValidation = this.validateForm();
       if (!formValidation) {
@@ -186,7 +206,8 @@ form {
   label {
     font-size: 1.5rem;
   }
-  input {
+  input,
+  select {
     width: 250px;
     padding: 10px 10px;
     border-radius: 15px;

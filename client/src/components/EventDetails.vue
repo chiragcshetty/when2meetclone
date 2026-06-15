@@ -15,6 +15,14 @@
           <th>Participants</th>
           <td>{{ $store.getters.getEventDetails.participants }}</td>
         </tr>
+        <tr v-if="$store.getters.getEventDetails.timezone">
+          <th>Event Timezone</th>
+          <td>{{ $store.getters.getEventDetails.timezone }}</td>
+        </tr>
+        <tr>
+          <th>Times Shown In</th>
+          <td>{{ $store.getters.getEventDetails.viewerTimezone }}</td>
+        </tr>
       </table>
     </div>
   </transition>

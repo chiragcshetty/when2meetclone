@@ -1,10 +1,17 @@
-const generateAvailability = (start_date, end_date, start_time, end_time) => {
+const generateAvailability = (
+  start_date,
+  end_date,
+  start_time,
+  end_time,
+  utc_offset = 0
+) => {
   //create array of unix time
   const user_time_array = create_user_time_array_hr(
     start_date,
     end_date,
     start_time,
-    end_time
+    end_time,
+    utc_offset
   );
 
   // create objects of unix time with count set to 0
@@ -20,11 +27,17 @@ const create_user_time_array_hr = (
   start_date,
   end_date,
   start_time,
-  end_time
+  end_time,
+  utc_offset = 0
 ) => {
   let user_time_array = [];
+  // Shift the wall-clock times into absolute (UTC) instants so that the stored
+  // timestamps represent the same moment regardless of where they are viewed.
+  // `utc_offset` is the event timezone's offset from UTC, in minutes
+  // (e.g. UTC+8 -> 480, New York EDT -> -240).
+  const tz_shift = (Number(utc_offset) || 0) * 60;
   // Calculate out the value of start date and value of end date in seconds
-  const start_timestamp = new Date(start_date).getTime() / 1000;
+  const start_timestamp = new Date(start_date).getTime() / 1000 - tz_shift;
   const end_timestamp = new Date(end_date).getTime() / 1000;
   const timestamp_difference = end_timestamp - start_timestamp;
   // Calculate out the value of markers to skip unselected hour slots in a day
