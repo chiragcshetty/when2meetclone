@@ -20,6 +20,14 @@
           <i class="fas fa-angle-right"></i>
         </div>
       </div>
+      <div class="timezone-chooser">
+        <label for="viewer-tz">Timezone</label>
+        <select id="viewer-tz" v-model="viewerTimezone">
+          <option v-for="tz in timezones" :key="tz" :value="tz">
+            {{ tz }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <button @click="clearAll" class="drop-shadow">
@@ -43,6 +51,8 @@ import EventDetails from "../components/EventDetails";
 import SignIn from "../components/SignIn.vue";
 import { useStore } from "vuex";
 import { computed, ref } from "vue";
+import { getTimezoneOptions } from "../utils";
+import { MutationType } from "../store/mutations";
 
 export default {
   emits: ["signIn"],
@@ -60,9 +70,18 @@ export default {
 
     const page = ref(0);
 
+    // Each participant can independently choose the timezone the grid is
+    // rendered in; it is stored in vuex and defaults to their local timezone.
+    const viewerTimezone = computed({
+      get: () => store.state.viewerTimezone,
+      set: (tz) => store.commit(MutationType.setViewerTimezone, tz),
+    });
+
     return {
       clearAll,
       page,
+      viewerTimezone,
+      timezones: getTimezoneOptions(),
       eventRange: computed(() => store.getters.getTopLabel),
       userName: computed(() => store.state.userName),
       pageNumbers: computed(() => store.getters.getPageNumbers),
@@ -109,6 +128,28 @@ export default {
       .right {
         cursor: pointer;
         font-size: 2rem;
+      }
+    }
+    .timezone-chooser {
+      display: flex;
+      flex-direction: column;
+      margin-left: 30px;
+      color: rgb(99, 99, 99);
+      label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }
+      select {
+        padding: 4px 6px;
+        border-radius: 8px;
+        border: solid 1px rgb(214, 214, 214);
+        color: rgb(99, 99, 99);
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        &:focus {
+          outline: none;
+        }
       }
     }
   }

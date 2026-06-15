@@ -10,6 +10,7 @@ export enum MutationType {
   RetrieveUserID = "RETRIEVE_USERID",
   updateHover = "UPDATE_HOVER",
   removeSelfAvailability = "REMOVE_SELF_AVAILABILITY",
+  setViewerTimezone = "SET_VIEWER_TIMEZONE",
 }
 
 export type Mutations = {
@@ -22,6 +23,7 @@ export type Mutations = {
   [MutationType.AddUserName](state: State, user: User): void;
   [MutationType.RetrieveUserID](state: State, content: any): void;
   [MutationType.updateHover](state: State, unixtime: string): void;
+  [MutationType.setViewerTimezone](state: State, timezone: string): void;
 };
 
 export const mutations: MutationTree<State> & Mutations = {
@@ -67,5 +69,8 @@ export const mutations: MutationTree<State> & Mutations = {
         unixtime
       ].filter((userid) => userid !== state.userID);
     }
+  },
+  [MutationType.setViewerTimezone](state, timezone) {
+    state.viewerTimezone = timezone;
   },
 };

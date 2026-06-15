@@ -40,11 +40,13 @@ export default {
 
     store.dispatch(ActionTypes.loadAvailabilities, route.params.id);
 
+    const viewerTimezone = computed(() => store.state.viewerTimezone);
+
     return {
       availability: computed(() => store.getters.getAvailability),
       result: computed(() => store.getters.getSplitAvailabilities[page.value]),
-      getDate,
-      getDay,
+      getDate: (unixObject) => getDate(unixObject, viewerTimezone.value),
+      getDay: (unixObject) => getDay(unixObject, viewerTimezone.value),
       timeLabels: computed(() => store.getters.getTimeLabels),
     };
   },

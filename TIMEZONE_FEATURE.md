@@ -5,11 +5,15 @@ event, and showing each viewer the reservation grid in their own local timezone.
 
 ## Goal
 
-1. **On event creation** — let the creator pick the timezone the start/end times
-   are expressed in (defaults to the creator's detected local timezone).
-2. **On viewing** — the availability grid (time-of-day rows and day columns) is
-   rendered in the **viewer's own local timezone**, so a person in a different
-   timezone sees the same absolute meeting slots shifted to their local clock.
+1. **On event creation** — the start/end times are interpreted in the creator's
+   current (detected) timezone, sent to the backend as a UTC offset, and the
+   timezone name is stored on the event. (A timezone dropdown is still present
+   and defaults to the detected zone.)
+2. **On viewing** — each participant can independently pick the timezone the
+   availability grid (time-of-day rows and day columns) is rendered in, via a
+   **Timezone** selector on the event page. It defaults to their detected local
+   timezone. Changing it re-renders the grid into the chosen timezone, so the
+   same absolute meeting slots are shown on each participant's preferred clock.
 
 ## How it works (the core idea)
 
@@ -22,9 +26,10 @@ Now:
 
 - The **creator's chosen timezone** is used to convert the entered wall-clock
   time into a correct absolute instant (UTC) before storing it.
-- The **frontend** formats those absolute timestamps with the browser's local
-  timezone (`new Date(ts * 1000)`), so each viewer automatically sees the slots
-  in their own timezone — no per-viewer conversion logic needed.
+- The **frontend** formats those absolute timestamps with whatever timezone the
+  viewer has selected (held in vuex as `viewerTimezone`, defaulting to their
+  detected local zone), using `Intl.DateTimeFormat({ timeZone })`. Changing the
+  selector updates the day labels, weekday labels, and time-of-day labels.
 
 ### Offset convention
 
@@ -73,9 +78,13 @@ their local 10:00 AM (01:00Z + 9h), which is correct.
 
 ### Frontend
 
-**`client/src/utils.ts`** — new exported helpers:
-- `localTimeLabels(firstKey, count)` — builds `count` hourly row labels starting
-  from the earliest absolute timestamp, formatted in the viewer's local time.
+**`client/src/utils.ts`** — new / updated exported helpers:
+- `localTimeLabels(firstKey, count, timeZone?)` — builds `count` hourly row
+  labels starting from the earliest absolute timestamp, formatted in the chosen
+  timezone (via the new `formatAMPMInZone` helper).
+- `getDate(unixObject, timeZone?)` and `getDay(unixObject, timeZone?)` — now
+  format the day-of-month and weekday in the chosen timezone using
+  `Intl.DateTimeFormat({ timeZone })` instead of the fixed local zone.
 - `getTimezoneOffsetMinutes(timeZone, date)` — computes an IANA timezone's UTC
   offset (in minutes) for a given date using `Intl.DateTimeFormat`. No external
   timezone library required.
@@ -84,14 +93,28 @@ their local 10:00 AM (01:00Z + 9h), which is correct.
 
 **`client/src/store/state.ts`**
 - Added `timezone: string` to the `EventData` interface.
+- Added `viewerTimezone: string` to `State`, defaulting to the viewer's detected
+  local timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`).
+
+**`client/src/store/mutations.ts`**
+- Added `setViewerTimezone` mutation to update the viewer's selected timezone.
 
 **`client/src/store/getters.ts`**
 - `getTimeLabels` now derives the row labels from the absolute timestamps via
-  `localTimeLabels`, instead of echoing the literal entered `start_time`/
-  `end_time` strings. The number of slots per day stays timezone-independent
-  (it is a duration), so the grid's chunking is unchanged.
+  `localTimeLabels(..., state.viewerTimezone)`, instead of echoing the literal
+  entered `start_time`/`end_time` strings. The number of slots per day stays
+  timezone-independent (it is a duration), so the grid's chunking is unchanged.
 - `getEventDetails` now also returns `timezone` (the event's stored timezone)
-  and `viewerTimezone` (the browser's detected timezone) for display.
+  and `viewerTimezone` (the currently selected viewing timezone) for display.
+
+**`client/src/components/Calendar.vue`**
+- Wraps `getDate`/`getDay` so the day and weekday column labels are formatted in
+  the selected `viewerTimezone` (read reactively from the store).
+
+**`client/src/views/Event.vue`**
+- Added a **Timezone** `<select>` (per participant) bound through a read/write
+  computed to the `setViewerTimezone` mutation, populated from
+  `getTimezoneOptions()`. Changing it re-renders the grid into that timezone.
 
 **`client/src/views/NewEvent.vue`**
 - Added a **Time Zone** `<select>` to the creation form, defaulting to
@@ -103,8 +126,8 @@ their local 10:00 AM (01:00Z + 9h), which is correct.
 
 **`client/src/components/EventDetails.vue`**
 - Added two detail rows: **Event Timezone** (the zone the event was created in,
-  shown only when present) and **Times Shown In** (the viewer's local timezone),
-  so the timezone behavior is visible to users.
+  shown only when present) and **Times Shown In** (the currently selected
+  viewing timezone), so the timezone behavior is visible to users.
 
 ## Behavior notes & trade-offs
 
@@ -126,8 +149,10 @@ their local 10:00 AM (01:00Z + 9h), which is correct.
 
 1. Create an event picking a timezone different from your machine's (e.g. set
    start 9:00 AM in `Asia/Tokyo` while your machine is on US time).
-2. Open the event — the grid's row labels should show the Tokyo 9:00 AM slot at
-   your machine's local equivalent, and **EventDetails** should list both the
-   event timezone and "Times Shown In" your local zone.
-3. Reopen the same event URL from a machine/browser in another timezone and
-   confirm the slots shift to that timezone while representing the same instants.
+2. Open the event — the grid renders in your detected local timezone, and
+   **EventDetails** lists both the event timezone and "Times Shown In".
+3. Change the **Timezone** selector on the event page (e.g. to `Asia/Tokyo`) and
+   confirm the day, weekday, and time-of-day labels all shift to that timezone
+   while representing the same absolute slots. "Times Shown In" updates too.
+4. Each participant can set this independently; it does not change the stored
+   data, only how that participant views it.

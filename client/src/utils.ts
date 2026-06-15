@@ -69,15 +69,31 @@ const timeLabelGenerator = function (start_time: string, end_time: string) {
   return hours.map(formatAMPM);
 };
 /**
- * Build the row time labels from the absolute timestamps stored on the event,
- * formatted in the viewer's local timezone. `firstKey` is the earliest
- * availability timestamp (in seconds) and `count` is the number of hourly slots
- * per day. This makes the displayed times shift to the viewer's own timezone.
+ * Format an absolute date as "9:00 AM" in the given IANA timezone. When no
+ * timezone is supplied the browser's local timezone is used.
  */
-const localTimeLabels = function (firstKey: number, count: number): string[] {
+const formatAMPMInZone = function (date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+};
+/**
+ * Build the row time labels from the absolute timestamps stored on the event,
+ * formatted in the chosen timezone. `firstKey` is the earliest availability
+ * timestamp (in seconds) and `count` is the number of hourly slots per day.
+ * This makes the displayed times shift to the viewer's selected timezone.
+ */
+const localTimeLabels = function (
+  firstKey: number,
+  count: number,
+  timeZone?: string
+): string[] {
   const labels = [];
   for (let i = 0; i < count; i++) {
-    labels.push(formatAMPM(new Date((firstKey + i * 3600) * 1000)));
+    labels.push(formatAMPMInZone(new Date((firstKey + i * 3600) * 1000), timeZone));
   }
   return labels;
 };
@@ -177,16 +193,20 @@ function splitToChunks(obj: any, parts: number) {
   }
   return result;
 }
-const getDate = function (unixObject: number): number {
+const getDate = function (unixObject: number, timeZone?: string): number {
   const a = new Date(unixObject * 1000);
-  return a.getDate();
+  return Number(
+    new Intl.DateTimeFormat("en-US", { timeZone, day: "numeric" }).format(a)
+  );
 };
-const getDay = function (unixObject: number) {
+const getDay = function (unixObject: number, timeZone?: string) {
   if (isNil(unixObject)) {
     return "";
   }
   const a = new Date(unixObject * 1000);
-  return Intl.DateTimeFormat("en-US", { weekday: "long" }).format(a);
+  return new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long" }).format(
+    a
+  );
 };
 
 export {

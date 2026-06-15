@@ -81,7 +81,7 @@ export const getters: GetterTree<State, State> & Getters = {
     if (keys.length === 0) {
       return [];
     }
-    return localTimeLabels(Number(keys[0]), slotsPerDay);
+    return localTimeLabels(Number(keys[0]), slotsPerDay, state.viewerTimezone);
   },
   getTopLabel(state) {
     if (isEmpty(state.eventData)) {
@@ -96,7 +96,7 @@ export const getters: GetterTree<State, State> & Getters = {
     return state.eventData.users;
   },
   getEventDetails(state) {
-    const viewerTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const viewerTimezone = state.viewerTimezone;
     if (isEmpty(state.eventData)) {
       return {
         created: "",

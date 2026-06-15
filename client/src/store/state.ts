@@ -22,10 +22,15 @@ export interface State {
   eventData: EventData;
   userID: string;
   currentHover: string[];
+  // The timezone the current viewer wants the grid rendered in. Each
+  // participant can change this independently; it defaults to their own
+  // detected local timezone.
+  viewerTimezone: string;
 }
 
 export const state: State = {
   eventData: <EventData>{},
   userID: "",
   currentHover: [],
+  viewerTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };
