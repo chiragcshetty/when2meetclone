@@ -61,10 +61,28 @@ nano .env
 Add:
 ```
 MONGO_DB_URI=mongodb://localhost:27017/when2meet
-PORT=3000
+PORT=80
 ```
 
-## 6. Run the app with PM2
+> **Port 80 is the standard recommendation** — the app serves HTTP directly, so
+> visitors reach it at `http://<your-ec2-ip>` with no extra proxy. Port 80 is a
+> privileged port (< 1024), so grant Node permission to bind it without running
+> as root (done in the next step). If you'd rather front the app with Nginx
+> (e.g. for HTTPS or multiple sites), set `PORT=3000` instead and see the
+> optional Nginx section below.
+
+## 6. Allow Node to bind to port 80
+
+Port 80 is privileged, so grant the Node binary the capability to bind low
+ports. This lets PM2 run the app on port 80 **without running as root**:
+
+```bash
+sudo setcap 'cap_net_bind_service=+ep' "$(readlink -f "$(which node)")"
+```
+
+> Re-run this command after any Node upgrade (it applies to the specific binary).
+
+## 7. Run the app with PM2
 
 ```bash
 sudo npm install -g pm2
@@ -77,17 +95,27 @@ pm2 startup   # run the command it prints to enable on boot
 Check it's running:
 ```bash
 pm2 status
-curl http://localhost:3000
+curl http://localhost      # port 80
 ```
 
-## 7. Open port in AWS Security Group
+## 8. Open port in AWS Security Group
 
 In the AWS console, go to your instance's Security Group → Inbound rules → add:
-- HTTP (80) from 0.0.0.0/0
-- HTTPS (443) from 0.0.0.0/0
+- HTTP (80) from 0.0.0.0/0  ← this is the port the app listens on
+- HTTPS (443) from 0.0.0.0/0  *(only if you add HTTPS/Nginx below)*
 - (SSH 22 should already be open to your IP)
 
-## 8. Set up Nginx as reverse proxy
+## 9. Verify
+
+Visit `http://<your-ec2-ip>` in a browser — you should see the when2meet app.
+That's the complete standard deployment. The sections below are **optional**.
+
+## (Optional) Front the app with Nginx
+
+Only needed if you want HTTPS, a custom domain, or to host multiple sites on the
+instance. If you take this path, set `PORT=3000` in `backend/.env`, restart
+(`pm2 restart when2meet`), and skip the `setcap` step from section 6 (Nginx
+binds port 80 instead).
 
 ```bash
 sudo apt install -y nginx
@@ -117,17 +145,13 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-## 9. (Optional) HTTPS with Let's Encrypt
+### (Optional) HTTPS with Let's Encrypt
 
-If you have a domain pointed at this instance:
+Requires the Nginx setup above and a domain pointed at this instance:
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d yourdomain.com
 ```
-
-## 10. Verify
-
-Visit `http://<your-ec2-ip>` (or your domain) in a browser — you should see the when2meet app.
 
 ## Redeploying after future code changes
 
