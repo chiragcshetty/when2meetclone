@@ -173,11 +173,11 @@ const getLabelTop = function (start: string, end: string): string {
   return (
     first.getDate() +
     " " +
-    monthNames[first.getMonth() + 1] +
+    monthNames[first.getMonth()] +
     " - " +
     last.getDate() +
     " " +
-    monthNames[last.getMonth() + 1]
+    monthNames[last.getMonth()]
   );
 };
 /**
